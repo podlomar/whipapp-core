@@ -1,0 +1,1 @@
+# whipapp-core
