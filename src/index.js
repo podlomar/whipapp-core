@@ -17,6 +17,11 @@ async function copy(srcPath, destPath) {
     }
   });
   
+  const destParent = path.dirname(destPath);
+  console.log(destParent);
+
+  fs.mkdirSync(destParent, { recursive: true});
+
   return new Promise((resolve, reject) => {
     const writer = fs.createWriteStream(destPath);
     
@@ -38,13 +43,17 @@ async function copy(srcPath, destPath) {
 };
 
 async function fetchKitPlan(kitName) {
-  const response = await axios.get(fileURL(`kits/${kitName || 'plain'}.json`), {
+  const name = kitName || 'plain';
+  const response = await axios.get(fileURL(`kits/${name}.json`), {
     headers: {
       Accept: 'application/vnd.github.3.raw',
     }
   });
   
-  return response.data;
+  return {
+    name, 
+    patterns: response.data,
+  };
 }
 
 function initAppFolder(rootDir, appName) {
@@ -61,8 +70,8 @@ function initAppFolder(rootDir, appName) {
 }
 
 async function generateApp(appRoot, kitPlan) {
-  for (const pattern of kitPlan) {
-    const kit = pattern.kit || 'kits/plain';
+  for (const pattern of kitPlan.patterns) {
+    const kit = pattern.kit || `kits/${kitPlan.name}`;
     const sources = Array.isArray(pattern.from) ? pattern.from : [pattern.from];
     
     for (const source of sources) {
