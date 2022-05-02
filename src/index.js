@@ -2,24 +2,19 @@ const axios = require('axios');
 const path = require('path');
 const fs = require('fs');
 
-const DEFAULT_REPO_URL = 'https://api.github.com/repos/podlomar/whipapp-kits';
+const DEFAULT_SERVER_URL = 'https://podlomar.github.com/whipapp-kits';
 
-function fileURL(repoURL, filePath) {
-  return `${repoURL}/contents/${filePath}`;
+function fileURL(serverURL, filePath) {
+  return `${serverURL}/${filePath}`;
 }
 
-async function copy(repoURL, srcPath, destPath) {
-  console.log(srcPath, destPath);
-  const response = await axios.get(fileURL(repoURL, srcPath), {
+async function copy(serverURL, srcPath, destPath) {
+  console.log('downloading', srcPath, '->', destPath);
+  const response = await axios.get(fileURL(serverURL, srcPath), {
     responseType: 'stream',
-    headers: {
-      Accept: 'application/vnd.github.3.raw',
-    }
   });
   
   const destParent = path.dirname(destPath);
-  console.log(destParent);
-
   fs.mkdirSync(destParent, { recursive: true});
 
   return new Promise((resolve, reject) => {
@@ -42,16 +37,16 @@ async function copy(repoURL, srcPath, destPath) {
   });
 };
 
-async function fetchKitPlan(kitName, repoURL = DEFAULT_REPO_URL) {
+async function fetchKitPlan(kitName, serverURL = DEFAULT_SERVER_URL) {
   const name = kitName || 'plain';
-  const response = await axios.get(fileURL(repoURL, `kits/${name}.json`), {
+  const response = await axios.get(fileURL(serverURL, `kits/${name}.json`), {
     headers: {
-      Accept: 'application/vnd.github.3.raw',
+      Accept: 'application/json',
     }
   });
   
   return {
-    repository: repoURL,
+    serverURL,
     name, 
     patterns: response.data,
   };
@@ -78,7 +73,7 @@ async function generateApp(appRoot, kitPlan) {
     for (const source of sources) {
       const srcName = pattern.name || path.basename(source);
       await copy(
-        kitPlan.repository, 
+        kitPlan.serverURL, 
         `${kit}/${source}`, 
         path.join(appRoot, pattern.to, srcName)
       );
