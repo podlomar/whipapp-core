@@ -19,6 +19,16 @@ const kitName = process.argv[3];
   // };
 
   const kitPlan = await fetchKitPlan(kitName, SERVER_URL);
-  const { appRoot } = initAppFolder(rootDir, appName);
-  await generateApp(appRoot, kitPlan);
+  if (kitPlan.status === 'error') {
+    console.error('ERROR:', kitPlan.message);
+    return;
+  }
+
+  const result = initAppFolder(rootDir, appName);
+  if (result.status === 'error') {
+    console.error('ERROR:', result.message);
+    return;
+  }
+
+  await generateApp(result.appRoot, kitPlan);
 })();

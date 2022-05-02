@@ -39,27 +39,48 @@ async function copy(serverURL, srcPath, destPath) {
 
 async function fetchKitPlan(kitName, serverURL = DEFAULT_SERVER_URL) {
   const name = kitName || 'plain';
-  const response = await axios.get(fileURL(serverURL, `kits/${name}.json`), {
-    headers: {
-      Accept: 'application/json',
-    }
-  });
   
-  return {
-    serverURL,
-    name, 
-    patterns: response.data,
-  };
+  try {
+    const response = await axios.get(fileURL(serverURL, `kits/${name}.json`), {
+      headers: {
+        Accept: 'application/json',
+      }
+    });
+    
+    return {
+      status: 'success',
+      serverURL,
+      name, 
+      patterns: response.data,
+    };
+  } catch (error) {
+    if (error.response && error.response.status === 404) {
+      return {
+        status: 'error',
+        message: `Starter kit template '${kitName}' doesn't exist.`
+      }
+    }
+    
+    throw error
+  }
 }
 
 function initAppFolder(rootDir, appName) {
   const appRoot = path.resolve(rootDir, appName);
   
   if (appName !== '.') {
+    if (fs.existsSync(appRoot)) {
+      return {
+        status: 'error',
+        message: `Directory '${appName}' already exists in '${rootDir}'. Can't overwrite it.`
+      }
+    }
+
     fs.mkdirSync(appRoot);
   }
 
   return {
+    status: 'success',
     appRoot,
     appName: appName === '.' ? 'app' : appName,
   };
